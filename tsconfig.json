@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
-    "typeRoots": ["src /types", "./node_modules/@types"],
-
+    "typeRoots": ["src/types", "./node_modules/@types"],
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
 
     "target": "ES6",
     "module": "CommonJS",
-    "rootDir": "src ",
-    "baseUrl": "./",
+    "rootDir": "src",
+    "baseUrl": "./src",
     "outDir": "dist",
+
     "removeComments": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -17,13 +17,11 @@
     "emitDecoratorMetadata": true,
     "strict": true,
     "skipLibCheck": true,
-    // "moduleResolution": "node",
-    // "allowSyntheticDefaultImports": true /* Allow 'import x from y' when a module doesn't have a default export. */,
 
     "paths": {
-      "@/*": ["src /*"]
+      "@/*": ["*"]
     }
   },
-  "include": ["src /**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
