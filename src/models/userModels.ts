@@ -1,29 +1,75 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import { Schema, Document, model } from "mongoose";
+import { IUser } from "@/types/user";
+import { match } from "assert";
 
-export interface IUser extends Document {
-  _id: Types.ObjectId;
-  full_name: string;
-  email: string;
-  password: string;
-  phone: string;
-  address: string;
-  roles: ("admin" | "farmer" | "customer")[]; //  plural and array type
-}
-
-const userSchema = new Schema<IUser>(
+const userSchema = new Schema(
   {
-    full_name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    phone: { type: String },
-    address: { type: String },
-    roles: {
-      type: [String], //  array of strings
-      enum: ["admin", "farmer", "customer"],
-      default: ["farmer"],
+    firstName: {
+      type: String,
+      required: [true, "First name is required"],
+      trim: true,
+    },
+
+    lastName: {
+      type: String, // optional
+      trim: true,
+    },
+
+    userName: {
+      type: String,
+      required: [true, "Username is required"],
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+
+    age: {
+      type: Number, // optional
+    },
+
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: function (value: string) {
+          return /^\S+@\S+\.\S+$/.test(value); // basic email validation using regular expression
+        },
+        message: "Please provide a valid email address",
+      },
+    },
+
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+    },
+
+    // phone: {
+    //   type: String,
+    //   required: [true, "Phone number is required"],
+    //   unique: true,
+    //   trim: true,
+    //   // match: [], //
+    //   validate: {
+    //     validator: function (value: string) {
+    //       return /^[0-9]{8,15}$/.test(value); // 8–15 digits
+    //     },
+    //     message: "Phone number must contain 8–15 digits",
+    //   },
+    // },
+    phone: {
+      type: String,
+      validate: {
+        validator: function (v: string) {
+          return /^\+?[0-9]{8,15}$/.test(v);
+        },
+        message: "Phone number must contain 8–15 digits",
+      },
     },
   },
   { timestamps: true }
 );
 
-export const userModel = mongoose.model<IUser>("User", userSchema);
+export const UserModel = model<IUser & Document>("User", userSchema);

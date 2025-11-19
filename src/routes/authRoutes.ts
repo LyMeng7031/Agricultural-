@@ -1,107 +1,45 @@
-import { Router } from "express";
+import express from "express";
 import {
-  addFarmerController,
+  registerController,
   loginController,
-  logoutController,
-} from "@/controller/authController";
+} from "../controller/authController";
 
-const router = Router();
-
-/**
- * @swagger
- * tags:
- *   name: Admin
- *   description: Admin  related endpoints
- */
+const router = express.Router();
 
 /**
  * @swagger
- * /api/add-register:
+ * /api/v1/auth/register:
  *   post:
- *     summary: Add a new farmer
- *     tags: [Admin]
+ *     tags: [Auth]
+ *     summary: Register a new user
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - full_name
- *               - email
- *               - password
- *             properties:
- *               full_name:
- *                 type: string
- *                 example: "Vichea"
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "vichea@example.com"
- *               password:
- *                 type: string
- *                 format: password
- *                 example: "SecurePass789"
- *               address:
- *                 type: string
- *                 example: "Kampong Cham, Cambodia"
- *               phone:
- *                 type: string
- *                 example: "+85577788899"
+ *             $ref: '#/components/schemas/RegisterUser'
  *     responses:
  *       201:
- *         description: Farmer added successfully
- *       409:
- *         description: User already exists
- *       500:
- *         description: Server error
+ *         description: User registered successfully
  */
-router.post("/add-farmers", addFarmerController);
+router.post("/register", registerController);
 
 /**
  * @swagger
- * /api/login:
+ * /api/v1/auth/login:
  *   post:
- *     summary: Farmer login
- *     tags: [Admin]
+ *     tags: [Auth]
+ *     summary: Login user
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "vichea@example.com"
- *               password:
- *                 type: string
- *                 format: password
- *                 example: "SecurePass789"
+ *             $ref: '#/components/schemas/LoginUser'
  *     responses:
  *       200:
- *         description: Login successful
- *       401:
- *         description: Invalid credentials
- *       500:
- *         description: Server error
+ *         description: Login successful, returns JWT token
  */
 router.post("/login", loginController);
 
-/** * @swagger
- * /api/logout:
- *   post:
- *     summary: Farmer logout
- *     tags: [Admin]
- *     responses:
- *       200:
- *         description: Logout successful
- *       500:
- *         description: Server error
- */
-router.post("/logout", logoutController);
 export default router;

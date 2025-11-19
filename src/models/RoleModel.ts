@@ -1,20 +1,12 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, model } from "mongoose";
+import { IRole } from "@/types/role";
 
-export interface IRole extends Document {
-  name: string;
-  description?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const RoleSchema = new Schema<IRole>(
+const roleSchema = new Schema<IRole>(
   {
-    name: { type: String, required: true, unique: true, trim: true },
-    description: { type: String, default: "" },
+    name: { type: String, required: true, unique: true },
+    description: { type: String },
   },
   { timestamps: true }
 );
 
-RoleSchema.index({ name: 1 }, { unique: true });
-
-export default model<IRole>("Role", RoleSchema);
+export const RoleModel = model<IRole>("Role", roleSchema);

@@ -1,119 +1,64 @@
-import bcrypt from "bcrypt";
-import { userModel } from "@/models/userModels";
-import { generateTokens } from "@/utils/token";
+import { UserModel } from "@/models/userModels";
 import { Request, Response } from "express";
-import { handleError } from "@/utils/response-util";
-import { setAuthCookies } from "../utils/cookie";
+import bcrypt from "bcryptjs";
+import Jwt from "jsonwebtoken";
 
-// Service to add a new farmer (or any user)
-export const addFarmerService = async (req: Request, res: Response) => {
+export const Registerservice = async (req: Request, res: Response) => {
+  const { email, firstName, lastName, userName, role, phone, age } = req.body;
   try {
-    const { full_name, email, address, password, phone, roles } = req.body;
-
-    // Check if user already exists
-    const existingUser = await userModel.findOne({ email });
-    if (existingUser) {
-      return handleError(res, 401, "User already exists");
+    const existEmail = await UserModel.findOne({ email });
+    if (existEmail) {
+      return res.status(400).json({ message: "Email already exists" });
     }
-
-    // Hash password
-    const hashPassword = await bcrypt.hash(password, 10);
-
-    // Create new user
-    const newUser = new userModel({
-      full_name,
+    //hash password before saving to database (omitted for brevity)
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    //create new user
+    const newUser = new UserModel({
+      firstName,
+      lastName,
+      userName,
+      age,
+      role,
       phone,
       email,
-      address,
-      password: hashPassword,
-      roles: Array.isArray(roles) && roles.length > 0 ? roles : ["farmer"], // ✅ roles array
+      password: hashedPassword,
     });
-
+    //save user to database
     await newUser.save();
-
-    // Generate tokens
-    const token = generateTokens(
-      newUser._id.toString(),
-      newUser.email,
-      newUser.roles || ["farmer"]
-    );
-
-    // Set tokens in cookies
-    setAuthCookies(res, token.accessToken, token.refreshToken);
-
-    // Respond with user data AND token
-    return res.status(201).json({
-      message: "User registered successfully",
-      data: {
-        user: {
-          _id: newUser._id,
-          full_name: newUser.full_name,
-          phone: newUser.phone,
-          address: newUser.address,
-          email: newUser.email,
-          roles: newUser.roles,
-        },
-        token,
-      },
-    });
+    res.status(201).json({ message: "User registered successfully", newUser });
   } catch (error) {
-    console.error(error);
-    return handleError(res, 500, "An error occurred during registration");
+    console.error("Error in register service:", error);
   }
 };
 
-// Login service to authenticate user and generate tokens
-export const loginService = async (req: Request, res: Response) => {
+export const Loginservice = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
   try {
-    const { email, password } = req.body;
-    const user = await userModel.findOne({ email });
-    if (!user) {
-      return handleError(res, 404, "User not found");
+    const existUser = await UserModel.findOne({ email });
+    if (!existUser) {
+      return res.status(400).json({ message: "Invalid credentials" });
     }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return handleError(res, 401, "Invalid credentials");
+    //compare password
+    const isMatch = await bcrypt.compare(
+      password,
+      existUser.password as string
+    );
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
     }
-
-    // Generate tokens
-    const token = generateTokens(
-      user._id.toString(),
-      user.email,
-      user.roles || ["farmer"]
+    //generate JWT token
+    const token = Jwt.sign(
+      {
+        id: existUser._id,
+        email: existUser.email,
+        userName: existUser.userName,
+      },
+      process.env.JWT_SECRET || "SECRET_KEY",
+      {}
     );
 
-    // Set tokens in cookies
-    setAuthCookies(res, token.accessToken, token.refreshToken);
-
-    // Respond with user data AND token
-    return res.status(200).json({
-      message: "Login successful",
-      data: {
-        user: {
-          _id: user._id,
-          full_name: user.full_name,
-          phone: user.phone,
-          address: user.address,
-          email: user.email,
-          roles: user.roles,
-        },
-        token,
-      },
-    });
+    return res.status(200).json({ message: "Login successful", token });
   } catch (error) {
-    console.error(error);
-    return handleError(res, 500, "An error occurred during login");
-  }
-};
-
-// Logout service to clear authentication cookies
-export const logoutService = async (req: Request, res: Response) => {
-  try {
-    setAuthCookies(res, "", ""); // clear cookies
-    return res.status(200).json({ message: "Logout successful" });
-  } catch (error) {
-    console.error(error);
-    return handleError(res, 500, "An error occurred during logout");
+    console.error("Error in login service:", error);
   }
 };

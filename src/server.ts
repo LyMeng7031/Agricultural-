@@ -1,40 +1,56 @@
+import express from "express";
+import dotenv from "dotenv";
 import connectDB from "./config/database";
-import cors from "cors";
-import express, { Application } from "express";
-import swaggerUi from "swagger-ui-express";
-import swaggerJSDoc from "swagger-jsdoc";
-import { swaggerOptions } from "./swagger";
-// import authRoute from "./routes/authRoutes";
-// import userRoute from "./routes/userRoutes";
-import router from "@/routes/index";
+import router from "./routes/index";
+import { seedAdminUser } from "@/scripts/seedAdmin";
+dotenv.config();
+const app = express();
 
-const PORT = process.env.PORT || 3000;
-const app: Application = express();
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "@/docs/swagger";
 
 // Middleware
 app.use(express.json());
-app.use(cors()); // Enable CORS
+app.use(express.urlencoded({ extended: true }));
 
-connectDB()
-  .then(() => {
-    console.log("Database connected");
+// Connect DB
+connectDB();
+seedAdminUser();
+// Swagger UI
+const swaggerOptions = {
+  explorer: true,
+  swaggerOptions: {
+    url: "/swagger.json",
+    validatorUrl: null,
+  },
+};
 
-    // Swagger setup
-    const swaggerSpec = swaggerJSDoc(swaggerOptions);
-    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Serve Swagger JSON
+// app.get('/swagger.json', (_req, res) => {
+//   res.setHeader('Content-Type', 'application/json');
+//   res.send(swaggerFile);
+// });
 
-    // Routes
-    app.use("/api", router);
-    // app.use("/api", userRoute);
+// Routes
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-    // Start server only after DB connection
-    app.listen(PORT, () => {
-      console.log(`✅ Server running at http://localhost:${PORT}`);
-      console.log(`Swagger docs at http://localhost:${PORT}/api-docs`);
-    });
-  })
+app.use("/api/v1", router); // existing routes
 
-  .catch((err) => {
-    console.error("Database connection failed:", err);
-    process.exit(1);
-  });
+// Error handling
+app.use(
+  (
+    err: any,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction
+  ) => {
+    console.error(err.stack);
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: "Server Error" });
+    }
+  }
+);
+
+// Start server
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
